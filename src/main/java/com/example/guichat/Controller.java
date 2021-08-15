@@ -3,6 +3,7 @@ package com.example.guichat;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -25,15 +26,23 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    private TextArea textArea;
+    private TextArea textArea;//это окошко вывода сообщений
 
     @FXML
-    private TextField textField;
+    private TextField textField;//это окошко ввода сообщения
+
+    @FXML
+    private Button connect;//это кнопка Подключиться
+
+    @FXML
+    private Button send;//это кнопка Отправить
 
     @FXML
     //нажатие кнопки отправить
     private void onSendButtonClick() {
         try {
+            if (textField.getText().trim() == "")
+                return;//Если ничего не введено в окошко ввода сообщения, то ничего и не отправляем
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());//это поток вывода
             String text = textField.getText();
             out.writeUTF(text);
@@ -67,6 +76,9 @@ public class Controller implements Initializable {
                 }
             });
             thread.start();
+            connect.setVisible(false);
+            textField.setVisible(true);
+            send.setVisible(true);
         } catch (IOException e) {
             e.printStackTrace();
         }
