@@ -11,8 +11,10 @@ import javafx.scene.control.TextField;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -23,6 +25,9 @@ public class Controller implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         textArea.setEditable(false);//не даём ничего вводить в окошко вывода сообщений чата
         textField.requestFocus();//передаёт фокус в поле ввода сообщений
+        onlineUsers.setEditable(false);//не даём ничего вводить в окошко вывода сообщений чата
+        textField.setVisible(false);//делаем невидимым окошко ввода сообщения
+        send.setVisible(false);//делаем невидимой кнопку Отправить
     }
 
     @FXML
@@ -36,6 +41,9 @@ public class Controller implements Initializable {
 
     @FXML
     private Button send;//это кнопка Отправить
+
+    @FXML
+    private TextArea onlineUsers;//это окошко, которое будет показывать нам он-лайн пользователей
 
     @FXML
     //нажатие кнопки отправить
@@ -59,17 +67,50 @@ public class Controller implements Initializable {
     //нажатие кнопки Подключиться
     private void connect() {
         try {
-            socket = new Socket("193.168.46.140", 8188);//localhost
-            DataInputStream in = new DataInputStream(socket.getInputStream());//это поток ввода
+            socket = new Socket("localhost", 8188);//193.168.46.140
+//            DataInputStream in = new DataInputStream(socket.getInputStream());//это поток ввода
+            ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    String response;
                     while (true) {//Бесконечно ожидаем сообщения от сервера
+                        String response = "";
+//                        ArrayList<String> usersName = new ArrayList();
+                        ArrayList<String> usersName = new ArrayList<>();//Коллекция с именами Пользователей
                         try {
-                            response = in.readUTF();//принимаем и читаем ответ от Сервера
-                            textArea.appendText(response + "\n");
-                        } catch (IOException e) {
+                            Object object = ois.readObject();
+//                            System.out.println("Объект: " + object);
+                            if (object.getClass().equals(usersName.getClass())) {//Если приходит список пользователей
+//                                usersName = (ArrayList<String>) object;
+                                usersName = (ArrayList<String>) object;
+//                                System.out.println(usersName);
+                                onlineUsers.clear();
+                                for (String userName : usersName) {
+                                    onlineUsers.appendText(userName + "\n");
+//                                    System.out.println("Клиент получает список пользователей");
+                                }
+                            } else if (object.getClass().equals(response.getClass())) {
+                                response = object.toString();
+                                textArea.appendText(response + "\n");//Просто выводим сообщение
+                            } else {
+                                System.out.println("Произошла ошибка");
+                            }
+//                            response = in.readUTF();//принимаем и читаем ответ от Сервера
+//                            response = ois.readObject().toString();//принимаем и читаем ответ от Сервера
+//                            System.out.println(ois.readObject().getClass());//смотрим, что за объект к нам приходит
+//                            System.out.println("String ли приходит? " + object.getClass().equals(response.getClass()));//получаем true, если это строка
+//                            System.out.println("ArrayList ли приходит? " + object.getClass().equals(usersName.getClass()));//получаем true, если это ArrayList
+                            //здесь проверяем не приходит-ли от сервера список пользователей
+/*                            if (response.indexOf("onlineUsers") == 0) {
+                                String[] users = response.split("//");
+                                onlineUsers.clear();
+                                for (int i = 1; i < users.length; i++) {
+                                    onlineUsers.appendText(users[i] + "\n");
+                                }
+                            } else {
+                                textArea.appendText(response + "\n");//Просто выводим сообщение
+                            }*/
+                        } catch (Exception e) {//чтобы не ругалось на readObject переделали IOException на Exception
                             e.printStackTrace();
                         }
                     }
