@@ -1,7 +1,6 @@
 package Server;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -22,7 +21,6 @@ public class Server {
                     User currentUser = new User(socket);//создаём класс Пользователя
                     users.add(currentUser);
                     DataInputStream in = new DataInputStream(currentUser.getSocket().getInputStream());//это поток ввода
-//                    DataOutputStream out = new DataOutputStream(currentUser.getSocket().getOutputStream());//это поток вывода
                     ObjectOutputStream oos = new ObjectOutputStream(currentUser.getSocket().getOutputStream());//теперь это поток вывода
                     currentUser.setOos(oos);
 //это третий способ многопоточности
@@ -30,7 +28,6 @@ public class Server {
                         @Override
                         public void run() {
                             try {
-//                                currentUser.getOos().writeUTF("Добро пожаловать на Сервер");//writeUTF работает для DataOutputStream
                                 currentUser.getOos().writeObject("Добро пожаловать на Сервер");//для ObjectOutputStream надо writeObject
                                 String userName;
                                 while (true) {//бесконечный цикл, где пользователь должен ввести уникальное имя в системе. Пока не будет введено уникальное имя в системе, дальше не пойдём
@@ -91,16 +88,8 @@ public class Server {
 
                         //Метод sendOnlineUsers - отправляет список всех подключённых пользователей
                         private void sendOnlineUsers() throws IOException {
-/*                            String onlineUsers = "onlineUsers";
-                            for (User user : users) {
-                                onlineUsers += "//" + user.getUserName();
-                            }*/
                             for (User user : users) {
                                 if (user.getUserName() == null) continue;
-//                                DataOutputStream out = new DataOutputStream(user.getSocket().getOutputStream());
-//                                ObjectOutputStream out = new ObjectOutputStream(user.getSocket().getOutputStream());
-//                                System.out.println("Сколько раз здесь");
-//                                System.out.println(usersName);
                                 user.getOos().writeObject(new ArrayList<>(usersName));//Ха, оказывается, что ObjectOutputStream кеширует ссылки на объекты и надо создать новый объект, чтобы сбрасывать кешируемые ссылки
 //The reason is that ObjectOutputStream caches object references and writes back-references to the stream if the same object is written twice. That means when you call write the second time the stream doesn't actually write a new copy of the object, it just inserts a reference to the object that it's already written.
 //You can prevent this by calling ObjectOutputStream.reset between calls to write. That tells the stream to discard any cached references.
@@ -115,7 +104,6 @@ public class Server {
                                 //добавил проверку user.getUserName() == null и теперь пользователю, который не ввёл ещё имени ничего приходить не будет
                                 if (users.indexOf(currentUser) == users.indexOf(user) || user.getUserName() == null)
                                     continue;//Не отправляем сообщение самому пользователю, который отправил это сообщение
-//                                DataOutputStream out = new DataOutputStream(user.getSocket().getOutputStream());
                                 user.getOos().writeObject(request);
                             }
                         }
@@ -130,7 +118,6 @@ public class Server {
                                 //добавил проверку user.getUserName() == null и теперь пользователю, который не ввёл ещё имени ничего приходить не будет
                                 if (user.getUserName() == null) continue;
                                 if (user.getUserName().equals(userName)) {
-//                                    DataOutputStream out = new DataOutputStream(user.getSocket().getOutputStream());
                                     user.getOos().writeObject(request);
                                     return;//прерываем цикл и выходим из метода, т.к. нет смысла идти далее, т.к. нужный пользователь найден и сообщение ему отправлено
                                 }
